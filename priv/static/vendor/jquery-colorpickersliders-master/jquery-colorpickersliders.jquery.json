@@ -1,0 +1,32 @@
+{
+    "name": "jquery-colorpickersliders",
+    "title": "jQuery Color Picker Sliders",
+    "description": "An advanced responsive color selector with color swatches and support for human perceived lightness. Works in all modern browsers and on touch devices.",
+    "keywords": [
+        "colorpicker",
+        "input",
+        "responsive",
+        "color",
+        "picker",
+        "widget",
+        "colorchooser"
+    ],
+    "version": "4.1.7",
+    "author": {
+        "name": "István Ujj-Mészáros",
+        "url": "https://github.com/istvan-ujjmeszaros"
+    },
+    "licenses": [
+        {
+            "type": "Apache License v2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0"
+        }
+    ],
+    "homepage": "http://www.virtuosoft.eu/code/jquery-colorpickersliders/",
+    "demo": "http://www.virtuosoft.eu/code/jquery-colorpickersliders/",
+    "docs": "http://www.virtuosoft.eu/code/jquery-colorpickersliders/",
+    "download": "https://github.com/istvan-ujjmeszaros/jquery-colorpickersliders/archive/master.zip",
+    "dependencies": {
+        "jquery": ">=1.7"
+    }
+}

@@ -1,4 +1,4 @@
-defmodule LifxClient do
+defmodule Lifx.Client do
     use GenServer
 
     @port 56700
@@ -54,9 +54,9 @@ defmodule LifxClient do
     defmodule FrameHeader do
         defstruct size: 0,
             origin: 0,
-            tagged: 0,
-            addressable: 0,
-            protocol: 1025,
+            tagged: 1,
+            addressable: 1,
+            protocol: 1024,
             source: 0
     end
 
@@ -83,7 +83,7 @@ defmodule LifxClient do
     end
 
     def start_link do
-        GenServer.start_link(__MODULE__, :ok)
+        GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
     end
 
     def discover(client) do
@@ -94,6 +94,10 @@ defmodule LifxClient do
         GenServer.call(client, {:set_color, hue, saturation, brightness, kelvin, duration})
     end
 
+    def test(client) do
+        GenServer.call(client, :test)
+    end
+
     def init(:ok) do
         udp_options = [
             :binary,
@@ -102,8 +106,21 @@ defmodule LifxClient do
             {:reuseaddr, true}
         ]
         source = :rand.uniform(4294967295)
+        IO.inspect source
         {:ok, udp} = :gen_udp.open(0 , udp_options)
         {:ok, %State{:udp => udp, :source => source}}
+    end
+
+    def handle_call(:test, _from, state) do
+        data = "24000034f238258300000000000000000000000000000100000000000000000002000000"
+        data2 = "29000054f2382583d073d512bcb900004c49465856320000c83d59844837651403000000017cdd0000"
+        {:ok, bin} = Base.decode16(data, case: :lower)
+        IO.inspect byte_size(bin)
+        {:ok, bin2} = Base.decode16(data2, case: :lower)
+        IO.inspect byte_size(bin2)
+        parse(bin) |> IO.inspect
+        parse(bin2) |> IO.inspect
+        {:reply, :ok, state}
     end
 
     def handle_call({:set_color, hue, saturation, brightness, kelvin, duration}, _from, state) do
@@ -128,8 +145,6 @@ defmodule LifxClient do
 
     def handle_call(:discover, _from, state) do
         b = discover_devices(state.source)
-        parse(b)
-        |> IO.inspect
         Base.encode16(b) |> IO.inspect
         :gen_udp.send(state.udp, @multicast, @port, b)
         {:reply, :ok, state}
@@ -138,66 +153,48 @@ defmodule LifxClient do
     def handle_info({:udp, _s, ip, _port, payload}, state) do
         packet = parse(payload)
         IO.inspect packet
-        new_state =
-            case packet do
-                %Packet{:protocol_header => %ProtocolHeader{:type => @stateservice}} ->
-                    d = %Device{:host => ip, :port => packet.payload.port, :id => packet.frame_address.target}
-                    cond do
-                        Enum.any?(state.devices, fn(dev) -> dev.id == d.id end) -> state
-                        true -> %State{state | :devices => [d | state.devices]}
-                    end
-                _ -> state
-            end
+        new_state = handle_packet(packet, ip, state)
         IO.inspect(new_state)
         {:noreply, new_state}
     end
 
-    def parse(payload) do
-        <<
-            size::little-integer-size(16),
-            origin::size(2),
-            tagged::size(1),
-            addressable::size(1),
-            protocol::little-integer-size(12),
-            source::little-integer-size(32),
-            target::size(64),
-            reserved::size(48),
-            reserved1::size(6),
-            ack_required::size(1),
-            res_required::size(1),
-            sequence::size(8),
-            reserved2::size(64),
-            type::little-integer-size(16),
-            reserved3::size(16),
-            rest::binary,
-        >> = payload
-        fh = %FrameHeader{
-            :size => size,
-            :origin => origin,
-            :tagged => tagged,
-            :addressable => addressable,
-            :protocol => protocol,
-            :source => source,
-        }
-        fa = %FrameAddress{
-            :target => target,
-            :reserved => reserved,
-            :reserved1 => reserved1,
-            :ack_required => ack_required,
-            :res_required => res_required,
-            :sequence => sequence,
-        }
-        ph = %ProtocolHeader{
-            :reserved => reserved2,
-            :type => type,
-            :reserved1 => reserved3
-        }
-        packet = %Packet{
-            :frame_header => fh,
-            :frame_address => fa,
-            :protocol_header => ph,
-        }
-        parse_payload(packet, rest)
+    def handle_packet(%Packet{:protocol_header => %ProtocolHeader{:type => @stateservice}} = packet, ip, state) do
+        d = %Device{:host => ip, :port => packet.payload.port, :id => packet.frame_address.target}
+        :gen_udp.send(state.udp, d.host, d.port, get_label(state.source, d.id))
+        cond do
+            Enum.any?(state.devices, fn(dev) -> dev.id == d.id end) -> state
+            true -> %State{state | :devices => [d | state.devices]}
+        end
+    end
+
+    def handle_packet(%Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet, _ip, state) do
+        id = packet.frame_address.target
+        %State{state | :devices => Enum.reduce(state.devices, [], fn(d, acc) ->
+            dev =
+                cond do
+                    d.id == id -> %Device{d | :label => packet.payload.label}
+                    true -> d
+                end
+            [dev | acc]
+        end)}
+    end
+
+    def handle_packet(%Packet{} = _packet, _ip, state) do
+        state
+    end
+
+    def get_label(source, id) do
+        fh = %FrameHeader{:source => source, :tagged => 0}
+        fa = %FrameAddress{:target => id}
+        ph = %ProtocolHeader{:type => @getlabel}
+        create_packet(fh, fa, ph)
+    end
+
+    def discover_devices(source) do
+        fh = %FrameHeader{:source => source}
+        fa = %FrameAddress{}
+        ph = %ProtocolHeader{:type => @getservice}
+        create_packet(fh, fa, ph)
     end
 
     def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @stateservice}} = packet, payload) do
@@ -218,37 +215,103 @@ defmodule LifxClient do
         %Packet{packet | :payload => %{:signal => signal, :tx => tx, :rx => rx, :reserved => reserved}}
     end
 
+    def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet, payload) do
+        << label::bytes-size(32) >> = payload
+        %Packet{packet | :payload => %{:label => String.rstrip(label, 0)}}
+    end
+
     def parse_payload(%Packet{} = packet, _payload) do
         packet
     end
 
-    def discover_devices(source) do
-        fh = %FrameHeader{:source => source}
-        fa = %FrameAddress{}
-        ph = %ProtocolHeader{:type => @getservice}
-        create_packet(fh, fa, ph)
+    def parse(payload) do
+        <<
+            size::little-integer-size(16),
+            otap::bits-size(16),
+            source::little-integer-size(32),
+
+            target::little-integer-size(64),
+            rar::bits-size(8),
+            sequence::little-integer-size(8),
+            reserved1::little-integer-size(48),
+
+            reserved3::little-integer-size(64),
+            type::little-integer-size(16),
+            reserved4::little-integer-size(16),
+            rest::binary,
+        >> = payload
+        <<
+            origin::size(2),
+            tagged::size(1),
+            addressable::size(1),
+            protocol::size(12)
+        >> = reverse_bits(otap)
+        <<
+            reserved2::size(6),
+            ack_required::size(1),
+            res_required::size(1),
+        >> = reverse_bits(rar)
+        fh = %FrameHeader{
+            :size => size,
+            :origin => origin,
+            :tagged => tagged,
+            :addressable => addressable,
+            :protocol => protocol,
+            :source => source,
+        }
+        fa = %FrameAddress{
+            :target => target,
+            :reserved => reserved1,
+            :reserved1 => reserved2,
+            :ack_required => ack_required,
+            :res_required => res_required,
+            :sequence => sequence,
+        }
+        ph = %ProtocolHeader{
+            :reserved => reserved3,
+            :type => type,
+            :reserved1 => reserved4
+        }
+        packet = %Packet{
+            :frame_header => fh,
+            :frame_address => fa,
+            :protocol_header => ph,
+        }
+        parse_payload(packet, rest)
     end
 
     def create_packet(%FrameHeader{} = fh, %FrameAddress{} = fa, %ProtocolHeader{} = ph, payload \\ <<>>) when is_binary(payload) do
-        packet = <<
-            fh.origin::size(2),
+        otap = reverse_bits(<<fh.origin::size(2),
             fh.tagged::size(1),
             fh.addressable::size(1),
-            fh.protocol::little-integer-size(12),
-            fh.source::little-integer-size(32)
-        >> <> <<
-            fa.target::size(64),
-            fa.reserved::size(48),
+            fh.protocol::size(12),
+        >>)
+        rar = reverse_bits(<<
             fa.reserved1::size(6),
             fa.ack_required::size(1),
             fa.res_required::size(1),
-            fa.sequence::size(8),
-        >> <> <<
-            ph.reserved::size(64),
+        >>)
+        packet = <<
+            otap::bits-size(16),
+            fh.source::little-integer-size(32),
+
+            fa.target::little-integer-size(64),
+            fa.reserved::little-integer-size(48),
+            rar::bits-size(8),
+            fa.sequence::little-integer-size(8),
+
+            ph.reserved::little-integer-size(64),
             ph.type::little-integer-size(16),
-            ph.reserved1::size(16),
+            ph.reserved1::little-integer-size(16),
         >> <> payload
         <<byte_size(packet)+2::little-integer-size(16)>> <> packet
+    end
+
+    def reverse_bits(bits) do
+        bits
+        |> :erlang.binary_to_list
+        |> :lists.reverse
+        |> :erlang.list_to_binary
     end
 
 end

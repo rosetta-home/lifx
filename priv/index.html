@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Test</title>
+        <style>
+            .messages div{
+                transition: opacity 200ms;
+            }
+
+            .messages div:last-child{
+                background-color: #FF0000;
+            }
+
+            .messages svg{
+                height: 30px;
+            }
+
+        </style>
+        <link href="/static/vendor/bootstrap-3.3.6-dist/css/bootstrap.css" rel="stylesheet">
+        <link href="/static/vendor/bootstrap-3.3.6-dist/css/bootstrap-theme.css" rel="stylesheet">
+        <link href="/static/vendor/nvd3/nv.d3.min.css" rel="stylesheet">
+        <link href="/static/vendor/jquery-colorpickersliders-master/jquery-colorpickersliders/jquery.colorpickersliders.css" rel="stylesheet" type="text/css" media="all">
+        <script src="/static/js/jquery-2.2.3.min.js"></script>
+        <script src="/static/vendor/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+        <script src="/static/vendor/nvd3/d3.min.js"></script>
+        <script src="/static/vendor/nvd3/nv.d3.min.js"></script>
+        <script src="/static/vendor/jquery-colorpickersliders-master/libraries/prettify/prettify.js"></script>
+        <script src="/static/vendor/jquery-colorpickersliders-master/libraries/tinycolor.js"></script>
+        <script src="/static/vendor/jquery-colorpickersliders-master/jquery-colorpickersliders/jquery.colorpickersliders.js"></script>
+        <script src="/static/js/node.js"></script>
+    </head>
+    <body>
+        <span class="hsl-demo"></span>
+    </body>
+    <script>
+    var user_id = Math.floor(Math.random()*10000000);
+    var ws = new WebSocket('ws:/'+window.location.host+'/ws?user_id='+this.user_id);
+    ws.onopen = function(evt) {
+        console.log(evt);
+    };
+    ws.onclose = function(evt) {
+        console.log(evt)
+    };
+    var websocket = new WebSocketManager(ws);
+    $(document).ready(function(){
+        $(".hsl-demo").ColorPickerSliders({
+            flat: true,
+            previewformat: 'hsl',
+            order: {
+                hsl: 1,
+                preview: 2
+            },
+            onchange: send_data,
+        });
+    });
+
+    function send_data(container, color) {
+        websocket.send(color);
+    }
+
+    </script>
+</html>
