@@ -3,6 +3,7 @@ defmodule Lifx.API.Websocket do
     require Logger
 
     alias Lifx.Event
+    alias Lifx.Protocol.HSBK
 
     @node "node"
 
@@ -55,7 +56,12 @@ defmodule Lifx.API.Websocket do
 
     def websocket_handle({:text, data}, req, state) do
         message = data |> Poison.decode!
-        Lifx.Client.set_color(Lifx.Client, message["hsla"]["h"], message["hsla"]["s"]*100, message["hsla"]["l"]*100, 4000, 1)
+        Lifx.Client.set_color(Lifx.Client, %HSBK{
+            :hue => message["hsla"]["h"],
+            :saturation => message["hsla"]["s"]*100,
+            :brightness => message["hsla"]["l"]*100,
+            :kelvin => 4000
+        }, 4000, 1)
         {:reply, {:text, "OK"}, req, state}
     end
 
