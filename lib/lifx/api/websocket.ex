@@ -61,7 +61,7 @@ defmodule Lifx.API.Websocket do
             :saturation => message["hsla"]["s"]*100,
             :brightness => message["hsla"]["l"]*100,
             :kelvin => 4000
-        }, 4000, 1)
+        }, 1)
         {:reply, {:text, "OK"}, req, state}
     end
 
