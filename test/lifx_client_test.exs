@@ -50,6 +50,6 @@ defmodule LifxTest do
     test "discovery packet parsing" do
         data = "240000345EC68BF400000000000000000000000000000100000000000000000002000000"
         {:ok, bin} = Base.decode16(data, case: :upper)
-        assert Protocol.parse(bin) == @discovery_packet
+        assert Protocol.parse_packet(bin) == @discovery_packet
     end
 end

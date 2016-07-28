@@ -1,39 +1,12 @@
 defmodule Lifx.API.Websocket do
     @behaviour :cowboy_websocket_handler
     require Logger
-
-    alias Lifx.Event
     alias Lifx.Protocol.HSBK
 
     @node "node"
 
     defmodule State do
         defstruct [:user_id, nodes: []]
-    end
-
-    defmodule Handler do
-
-        defmodule State do
-            defstruct [:parent, :id]
-        end
-
-        def init({parent, id}) do
-            {:ok, %State{:parent => parent, :id => id}}
-        end
-
-        def handle_event(event = %Event{:type => :clock}, state) do
-            {:ok, state}
-        end
-
-        def handle_event(event = %Event{:type => :image}, state) do
-            {:ok, state}
-        end
-
-        def handle_event(event = %Event{}, state) do
-            send(state.parent, %Event{event | :id => state.id})
-            {:ok, state}
-        end
-
     end
 
     def init({tcp, http}, _req, _opts) do
@@ -56,7 +29,7 @@ defmodule Lifx.API.Websocket do
 
     def websocket_handle({:text, data}, req, state) do
         message = data |> Poison.decode!
-        Lifx.Client.set_color(Lifx.Client, %HSBK{
+        Lifx.Client.set_color(%HSBK{
             :hue => message["hsla"]["h"],
             :saturation => message["hsla"]["s"]*100,
             :brightness => message["hsla"]["l"]*100,
@@ -74,10 +47,6 @@ defmodule Lifx.API.Websocket do
         Logger.info "Sending to: #{message.id}"
         send(message.id, message)
         state
-    end
-
-    def websocket_info(event = %Event{}, req, state) do
-        {:reply, {:text, Poison.encode!(event)}, req, state}
     end
 
     def websocket_info(_info, req, state) do

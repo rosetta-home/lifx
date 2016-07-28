@@ -21,11 +21,11 @@ defmodule Lifx.Protocol.Types do
             @stateversion 33
             @getinfo 34
             @stateinfo 35
+            @acknowledgement 45
             @getlocation 48
             @statelocation 50
             @getgroup 51
             @stategroup 53
-            @acknowledgement 45
             @echorequest 58
             @echoresponse 59
             @light_get 101
