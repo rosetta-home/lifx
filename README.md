@@ -8,6 +8,8 @@ Automatically discover and control all of your [Lifx](http://lifx.com) lightbulb
 
 For testing purposes it includes a small web frontend that's available at http://localhost:8800
 
+![Web Interface](./images/web-interface.png)
+
     1. clone the repo
     2. mix do deps.get, deps.compile
     3. iex -S mix
