@@ -69,7 +69,7 @@ defmodule Lifx.Client do
     def handle_call({:set_color, %HSBK{} = hsbk, duration}, _from, state) do
         payload = Protocol.hsbk(hsbk, duration)
         :gen_udp.send(state.udp, @multicast, @port, %Packet{
-            :frame_header => %FrameHeader{:source => state.source, :tagged => 1},
+            :frame_header => %FrameHeader{:source => state.source, :tagged => 0},
             :frame_address => %FrameAddress{},
             :protocol_header => %ProtocolHeader{:type => @light_setcolor}
         } |> Protocol.create_packet(payload))

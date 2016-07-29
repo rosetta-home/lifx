@@ -8,7 +8,7 @@ defmodule Lifx.Handler do
     end
 
     def handle_event(%Device{} = device, parent) do
-        Logger.info "New Device found: #{inspect device}"
+        Logger.info("Device #{inspect device.id} state updated: #{inspect device}")
         send(parent, device)
         {:ok, parent}
     end

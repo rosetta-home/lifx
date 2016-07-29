@@ -39,6 +39,18 @@ defmodule Lifx.Protocol do
             payload: %{}
     end
 
+    defmodule Group do
+        defstruct id: [],
+            label: nil,
+            updated_at: 0
+    end
+
+    defmodule Location do
+        defstruct id: [],
+            label: nil,
+            updated_at: 0
+    end
+
     defmodule HSBK do
         defstruct [hue: 120,
             saturation: 100,
@@ -99,6 +111,56 @@ defmodule Lifx.Protocol do
 
     def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet, payload) do
         %Packet{packet | :payload => %{:label => parse_label(payload)}}
+    end
+
+    def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet, payload) do
+        << level::size(16) >> = payload
+        %Packet{packet | :payload => %{:level => level}}
+    end
+
+    def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @stategroup}} = packet, payload) do
+        <<
+            id::bytes-size(16),
+            label::bytes-size(32),
+            updated_at::size(64)
+        >> = payload
+        %Packet{packet | :payload => %{
+            :group => %Group{
+                :id => id,
+                :label => parse_label(label),
+                :updated_at => updated_at
+            }
+        }}
+    end
+
+    def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statelocation}} = packet, payload) do
+        <<
+            id::bytes-size(16),
+            label::bytes-size(32),
+            updated_at::size(64)
+        >> = payload
+        %Packet{packet | :payload => %{
+            :location => %Location{
+                :id => id,
+                :label => parse_label(label),
+                :updated_at => updated_at
+            }
+        }}
+    end
+
+    def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statewifiinfo}} = packet, payload) do
+        <<
+            signal::little-float-size(32),
+            rx::little-size(32),
+            tx::little-size(32),
+            reserved::signed-little-size(16)
+        >> = payload
+        %Packet{packet | :payload => %{
+            :signal => signal,
+            :rx => rx,
+            :tx => tx,
+            :reserved => reserved
+        }}
     end
 
     def parse_payload(%Packet{} = packet, _payload) do

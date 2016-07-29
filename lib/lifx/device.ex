@@ -4,7 +4,7 @@ defmodule Lifx.Device do
     require Logger
     alias Lifx.Protocol.{FrameHeader, FrameAddress, ProtocolHeader}
     alias Lifx.Protocol.{Device, Packet}
-    alias Lifx.Protocol.{HSBK}
+    alias Lifx.Protocol.{HSBK, Group, Location}
     alias Lifx.Client
 
     defmodule State do
@@ -13,9 +13,12 @@ defmodule Lifx.Device do
             port: 57600,
             label: nil,
             power: 0,
+            signal: 0,
             rx: 0,
             tx: 0,
-            hsbk: %HSBK{}
+            hsbk: %HSBK{},
+            group: %Group{},
+            location: %Location{}
     end
 
     def start_link(%State{} = device) do
@@ -35,12 +38,30 @@ defmodule Lifx.Device do
     end
 
     def init(%State{} = device) do
-        Process.send_after(self, :label, 100)
+        Process.send_after(self, :state, 100)
         {:ok, device}
     end
 
     def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet}, state) do
         s = %State{state | :label => packet.payload.label}
+        GenEvent.notify(Lifx.Client.Events, s)
+        {:noreply, s}
+    end
+
+    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet}, state) do
+        s = %State{state | :power => packet.payload.level}
+        GenEvent.notify(Lifx.Client.Events, s)
+        {:noreply, s}
+    end
+
+    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @stategroup}} = packet}, state) do
+        s = %State{state | :group => packet.payload.group}
+        GenEvent.notify(Lifx.Client.Events, s)
+        {:noreply, s}
+    end
+
+    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelocation}} = packet}, state) do
+        s = %State{state | :location => packet.payload.location}
         GenEvent.notify(Lifx.Client.Events, s)
         {:noreply, s}
     end
@@ -51,14 +72,18 @@ defmodule Lifx.Device do
             :power => packet.payload.power,
             :label => packet.payload.label,
         }
-        Logger.info("Device #{inspect state.id} colors updated #{inspect s}")
         GenEvent.notify(Lifx.Client.Events, s)
         {:noreply, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @acknowledgement}} = packet}, state) do
-        Logger.info("Device: #{inspect state.id} command acknowledged")
-        {:noreply, state}
+    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statewifiinfo}} = packet}, state) do
+        s = %State{state |
+            :signal => packet.payload.signal,
+            :rx => packet.payload.rx,
+            :tx => packet.payload.tx,
+        }
+        GenEvent.notify(Lifx.Client.Events, s)
+        {:noreply, s}
     end
 
     def handle_cast({:packet, %Packet{} = packet}, state) do
@@ -77,13 +102,44 @@ defmodule Lifx.Device do
         {:noreply, state}
     end
 
-    def handle_info(:label, state) do
-        packet = %Packet{
+    def handle_info(:state, state) do
+        location_packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @getlocation}
+        }
+        Client.send(state, location_packet)
+        label_packet = %Packet{
             :frame_header => %FrameHeader{},
             :frame_address => %FrameAddress{:target => state.id},
             :protocol_header => %ProtocolHeader{:type => @getlabel}
         }
-        Client.send(state, packet)
+        Client.send(state, label_packet)
+        color_packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @light_get}
+        }
+        Client.send(state, color_packet)
+        wifi_packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @getwifiinfo}
+        }
+        Client.send(state, wifi_packet)
+        power_packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @getpower}
+        }
+        Client.send(state, power_packet)
+        group_packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @getgroup}
+        }
+        Client.send(state, group_packet)
+        Process.send_after(self(), :state, 5000)
         {:noreply, state}
     end
 end
