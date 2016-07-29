@@ -15,6 +15,7 @@ defmodule Lifx.API.Websocket do
 
     def websocket_init(_TransportName, req, _opts) do
         {user_id, req} = :cowboy_req.qs_val("user_id", req)
+        Process.send_after(self, :heartbeat, 1000)
         {:ok, req, %State{user_id: user_id}}
     end
 
@@ -30,12 +31,12 @@ defmodule Lifx.API.Websocket do
     def websocket_handle({:text, data}, req, state) do
         message = data |> Poison.decode!
         Lifx.Client.set_color(%HSBK{
-            :hue => message["hsla"]["h"],
-            :saturation => message["hsla"]["s"]*100,
-            :brightness => message["hsla"]["l"]*100,
+            :hue => message["h"],
+            :saturation => message["s"]*100,
+            :brightness => message["l"]*100,
             :kelvin => 4000
         }, 1)
-        {:reply, {:text, "OK"}, req, state}
+        {:reply, {:text, Poison.encode!(%{:ack => true})}, req, state}
     end
 
     def websocket_handle(_data, req, state) do
@@ -47,6 +48,11 @@ defmodule Lifx.API.Websocket do
         Logger.info "Sending to: #{message.id}"
         send(message.id, message)
         state
+    end
+
+    def websocket_info(:heartbeat, req, state) do
+        Process.send_after(self, :heartbeat, 1000)
+        {:reply, {:text, Poison.encode!(%{:type => :heartbeat})}, req, state}
     end
 
     def websocket_info(_info, req, state) do

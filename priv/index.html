@@ -33,33 +33,53 @@
         <script src="/static/js/node.js"></script>
     </head>
     <body>
-        <span class="hsl-demo"></span>
+        <div class="container">
+            <div class="row" id="devices">
+                <div class=\"col-sm-4 col-md-4\">
+                    <div class=\"thumbnail\">
+                        <span id="hsl-demo"></span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </body>
     <script>
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
     var user_id = Math.floor(Math.random()*10000000);
     var ws = new WebSocket('ws:/'+window.location.host+'/ws?user_id='+this.user_id);
     ws.onopen = function(evt) {
         console.log(evt);
-    };
-    ws.onclose = function(evt) {
-        console.log(evt)
-    };
-    var websocket = new WebSocketManager(ws);
-    $(document).ready(function(){
-        $(".hsl-demo").ColorPickerSliders({
+        $("#hsl-demo").ColorPickerSliders({
             flat: true,
             previewformat: 'hsl',
             order: {
                 hsl: 1,
                 preview: 2
             },
-            onchange: send_data,
+            onchange: send_data
         });
-    });
-
-    function send_data(container, color) {
-        websocket.send(color);
-    }
+    };
+    ws.onclose = function(evt) {
+        console.log(evt)
+    };
+    var websocket = new WebSocketManager(ws);
+    var send_data = debounce(function(container, color) {
+        websocket.send(color.hsla);
+    }, 40, true);
 
     </script>
 </html>

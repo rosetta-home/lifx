@@ -54,7 +54,7 @@ defmodule Lifx.Client do
         Logger.info("Client: #{source}")
         {:ok, udp} = :gen_udp.open(0 , udp_options)
         Process.send_after(self(), :discover, 100)
-        {:ok, %State{:udp => udp, :source => source}}
+        {:ok, %State{:udp => udp, :source => source, :events => events}}
     end
 
     def handle_call({:send, device, packet, payload}, _from, state) do
@@ -70,7 +70,7 @@ defmodule Lifx.Client do
         payload = Protocol.hsbk(hsbk, duration)
         :gen_udp.send(state.udp, @multicast, @port, %Packet{
             :frame_header => %FrameHeader{:source => state.source, :tagged => 1},
-            :frame_address => %FrameAddress{:ack_required => 1, :res_required => 1},
+            :frame_address => %FrameAddress{},
             :protocol_header => %ProtocolHeader{:type => @light_setcolor}
         } |> Protocol.create_packet(payload))
         {:reply, :ok, state}
@@ -95,6 +95,7 @@ defmodule Lifx.Client do
 
     def handle_info(:discover, state) do
         send_discovery_packet(state.source, state.udp)
+        Process.send_after(self(), :discover, 10000)
         {:noreply, state}
     end
 

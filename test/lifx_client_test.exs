@@ -5,7 +5,8 @@ defmodule LifxTest do
 
     alias Lifx.Protocol
     alias Lifx.Protocol.{FrameHeader, FrameAddress, ProtocolHeader}
-    alias Lifx.Protocol.{Device, Packet}
+    alias Lifx.Protocol.{Packet}
+    alias Lifx.Device.State, as: Device
 
     @discovery_packet %Packet{
         frame_header: %FrameHeader{
@@ -22,7 +23,7 @@ defmodule LifxTest do
             reserved: 0,
             reserved1: 0,
             sequence: 0,
-            target: 0
+            target: :"0" #target is automatically converted to an atom for use as PID name. it is automatically converted back to int for binary transmission
         },
         protocol_header: %ProtocolHeader{
             reserved: 0,
@@ -40,16 +41,17 @@ defmodule LifxTest do
     test "discovery packet creation" do
         data = "240000345EC68BF400000000000000000000000000000100000000000000000002000000"
         {:ok, bin} = Base.decode16(data, case: :upper)
-        assert Protocol.create_packet(
-            @discovery_packet.frame_header,
-            @discovery_packet.frame_address,
-            @discovery_packet.protocol_header
-        ) == bin
+        assert Protocol.create_packet(@discovery_packet) == bin
     end
 
     test "discovery packet parsing" do
         data = "240000345EC68BF400000000000000000000000000000100000000000000000002000000"
         {:ok, bin} = Base.decode16(data, case: :upper)
         assert Protocol.parse_packet(bin) == @discovery_packet
+    end
+
+    test "Client event handler" do
+        Lifx.Client.add_handler(Lifx.Handler)
+        assert_receive(%Device{}, 10000)
     end
 end
