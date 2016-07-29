@@ -10,6 +10,8 @@ For testing purposes it includes a small web frontend that's available at http:/
 
 ![Web Interface](./images/web-interface.png)
 
+The web interface currently controls all lights on the network.
+
     1. clone the repo
     2. mix do deps.get, deps.compile
     3. iex -S mix
