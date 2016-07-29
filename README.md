@@ -6,7 +6,7 @@ Automatically discover and control all of your [Lifx](http://lifx.com) lightbulb
 
 ## Use
 
-For testing purposes it includes a small web frontend that's available at http://localhost:8800
+For testing purposes it includes a small web frontend that's available at [http://localhost:8800](http://localhost:8800)
 
 ![Web Interface](./images/web-interface1.png)
 
