@@ -8,7 +8,7 @@ Automatically discover and control all of your [Lifx](http://lifx.com) lightbulb
 
 For testing purposes it includes a small web frontend that's available at http://localhost:8800
 
-![Web Interface](./images/web-interface.png)
+![Web Interface](./images/web-interface1.png)
 
 The web interface currently controls all lights on the network.
 
