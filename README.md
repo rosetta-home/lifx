@@ -6,15 +6,17 @@ Automatically discover and control all of your [Lifx](http://lifx.com) lightbulb
 
 ## Use
 
+    1. git clone https://github.com/NationalAssociationOfRealtors/lifx.git
+    2. mix do deps.get, deps.compile
+    3. iex -S mix
+
 For testing purposes it includes a small web frontend that's available at [http://localhost:8800](http://localhost:8800)
 
 ![Web Interface](./images/web-interface1.png)
 
 The web interface currently controls all lights on the network.
 
-    1. clone the repo
-    2. mix do deps.get, deps.compile
-    3. iex -S mix
+## Explanation
 
 As long as you are on the same subnet as your lightbulbs, you should see some information in stdout about devices being discovered
 
