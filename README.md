@@ -48,8 +48,12 @@ What's shown here is the initial state of the bulb. Shortly after the bulb is di
 
 ![Architecture Image](./images/lifx_architecture.png)
 
-Lifx.Client is a small UDP server running on a randomly selected open port. It is the main interface for sending and receiving messages. As a new device is discovered a process is spawned and it's state represents the given device.
+`Lifx.Client` is a small UDP server running on a randomly selected available port. It is the main interface for sending and receiving messages. As a new device is discovered a process is spawned and it's state represents the given device.
 
-Every 5 seconds the device process queries itself for updated state information. The updated state is then broadcast (using notify) over Lifx.Client.Events event bus. Anyone can add a handler to the event bus to handle updated device state.
+Every 5 seconds the device process queries itself for updated state information. The updated state is then broadcast (using notify) over `Lifx.Client.Events` event bus. Anyone can add a handler to the event bus to handle updated device state by calling `Lifx.Client.add_handler`. See `Lifx.Handler` for an example implementation of an event handler.
 
-Lifx.Protocol handles all protocol related functions, parsing and creating packets as well as payloads.
+`Lifx.Client` also provides a function to set bulb color to all devices currently on the network. It uses a broadcast packet to accomplish this.
+
+`Lifx.Protocol` handles all protocol related functions, parsing and creating packets as well as payloads.
+
+In order to communicate with a single bulb, in a network that may contain multiple devices you would use the `Lifx.Device` interface `Lifx.Device.set_color(pid, %Lifx.Protocol.HSBK{}, duration)` where pid is `Lifx.Device.State.id`
