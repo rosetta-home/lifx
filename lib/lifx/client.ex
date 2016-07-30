@@ -19,7 +19,8 @@ defmodule Lifx.Client do
         defstruct udp: nil,
             source: 0,
             events: nil,
-            handlers: []
+            handlers: [],
+            devices: []
     end
 
     def start_link do
@@ -51,10 +52,11 @@ defmodule Lifx.Client do
         ]
         source = :rand.uniform(4294967295)
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
+        GenEvent.add_mon_handler(events, Lifx.Handler, self)
         Logger.info("Client: #{source}")
         {:ok, udp} = :gen_udp.open(0 , udp_options)
-        Process.send_after(self(), :discover, 100)
-        {:ok, %State{:udp => udp, :source => source, :events => events}}
+        Process.send_after(self(), :discover, 200)
+        {:ok, %State{:udp => udp, :source => source, :events => events, :handlers => [{Lifx.Handler, self}]}}
     end
 
     def handle_call({:send, device, packet, payload}, _from, state) do
@@ -102,6 +104,22 @@ defmodule Lifx.Client do
     def handle_info({:udp, _s, ip, _port, payload}, state) do
         Task.Supervisor.start_child(PacketSupervisor, fn -> process(ip, payload, state) end)
         {:noreply, state}
+    end
+
+    def handle_info(%Device{} = device, state) do
+        new_state =
+            cond do
+                Enum.any?(state.devices, fn(dev) -> dev.id == device.id end) ->
+                    %State{state | :devices => Enum.map(state.devices, fn(d) ->
+                        cond do
+                            device.id == d.id -> device
+                            true -> d
+                        end
+                    end)}
+                true -> %State{state | :devices => [device | state.devices]}
+            end
+        IO.inspect new_state
+        {:noreply, new_state}
     end
 
     def handle_packet(%Packet{:protocol_header => %ProtocolHeader{:type => @stateservice}} = packet, ip, state) do
