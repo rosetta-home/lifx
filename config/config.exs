@@ -2,7 +2,7 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :lifx, tcp_port: 8800
+config :lifx, tcp_server: true, tcp_port: 8800
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
