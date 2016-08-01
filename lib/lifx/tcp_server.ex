@@ -1,10 +1,8 @@
 defmodule Lifx.TCPServer do
-
     alias Lifx.API
 
-    @port Application.get_env(:lifx, :tcp_port)
-
     def start_link do
+        port =  Application.get_env(:lifx, :tcp_port)
         dispatch = :cowboy_router.compile([
             { :_,
                 [
@@ -15,7 +13,7 @@ defmodule Lifx.TCPServer do
         ])
         {:ok, _} = :cowboy.start_http(:http,
             100,
-            [{:port, @port}],
+            [{:port, port}],
             [{:env, [{:dispatch, dispatch}]}]
         )
     end

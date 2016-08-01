@@ -59,7 +59,7 @@ defmodule Lifx.Client do
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
         GenEvent.add_mon_handler(events, Lifx.Handler, self)
         {:ok, udp} = :gen_udp.open(0 , udp_options)
-        Process.send_after(self(), :discover, 200)
+        Process.send_after(self(), :discover, 100)
         {:ok, %State{:udp => udp, :source => source, :events => events, :handlers => [{Lifx.Handler, self}]}}
     end
 
