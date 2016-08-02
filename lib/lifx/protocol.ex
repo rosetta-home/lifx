@@ -114,7 +114,7 @@ defmodule Lifx.Protocol do
     end
 
     def parse_payload(%Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet, payload) do
-        << level::size(16) >> = payload
+        level = parse_level(payload)
         %Packet{packet | :payload => %{:level => level}}
     end
 
@@ -195,6 +195,15 @@ defmodule Lifx.Protocol do
             kelvin::little-integer-size(16),
         >> = payload
         %HSBK{:hue => hue, :saturation => saturation, :brightness => brightness, :kelvin => kelvin}
+    end
+
+    def level(level) do
+        << level::size(16) >>
+    end
+
+    def parse_level(payload) do
+        << level::size(16) >> = payload
+        level
     end
 
     def parse_packet(payload) do

@@ -5,6 +5,7 @@ defmodule Lifx.Device do
     alias Lifx.Protocol.{FrameHeader, FrameAddress, ProtocolHeader}
     alias Lifx.Protocol.{Device, Packet}
     alias Lifx.Protocol.{HSBK, Group, Location}
+    alias Lifx.Protocol
     alias Lifx.Client
 
     defmodule State do
@@ -27,6 +28,14 @@ defmodule Lifx.Device do
 
     def set_color(device, %HSBK{} = hsbk, duration \\ 1000) when device |> is_atom do
         GenServer.cast(device, {:set_color, hsbk, duration})
+    end
+
+    def on(device) do
+        GenServer.cast(device, {:set_power, 65535})
+    end
+
+    def off(device) do
+        GenServer.cast(device, {:set_power, 0})
     end
 
     def get_label(device) when device |> is_atom do
@@ -98,6 +107,17 @@ defmodule Lifx.Device do
             :protocol_header => %ProtocolHeader{:type => @light_setcolor}
         }
         payload = Protocol.hsbk(hsbk, duration)
+        Client.send(state, packet, payload)
+        {:noreply, state}
+    end
+
+    def handle_cast({:set_power, power}, state) do
+        packet = %Packet{
+            :frame_header => %FrameHeader{},
+            :frame_address => %FrameAddress{:target => state.id},
+            :protocol_header => %ProtocolHeader{:type => @setpower}
+        }
+        payload = Protocol.level(power)
         Client.send(state, packet, payload)
         {:noreply, state}
     end
