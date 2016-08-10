@@ -55,7 +55,7 @@ defmodule Lifx.Client do
             {:reuseaddr, true}
         ]
         source = :rand.uniform(4294967295)
-        Logger.info("Client: #{source}")
+        Logger.debug("Client: #{source}")
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
         GenEvent.add_mon_handler(events, Lifx.Handler, self)
         {:ok, udp} = :gen_udp.open(0 , udp_options)
