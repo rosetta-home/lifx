@@ -28,7 +28,7 @@ defmodule Lifx.Mixfile do
   def package do
     [
       name: :lifx,
-      files: ["lib", "priv", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "priv", "config", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Christopher Steven Coté"],
       licenses: ["MIT License"],
       links: %{"GitHub" => "https://github.com/NationalAssociationOfRealtors/lifx",
