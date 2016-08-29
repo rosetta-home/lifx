@@ -57,13 +57,13 @@ defmodule Lifx.Client do
         source = :rand.uniform(4294967295)
         Logger.debug("Client: #{source}")
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
-        GenEvent.add_mon_handler(events, Lifx.Handler, self)
         {:ok, udp} = :gen_udp.open(0 , udp_options)
         Process.send_after(self(), :discover, 100)
-        {:ok, %State{:udp => udp, :source => source, :events => events, :handlers => [{Lifx.Handler, self}]}}
+        {:ok, %State{:udp => udp, :source => source, :events => events}}
     end
 
     def handle_call({:send, device, packet, payload}, _from, state) do
+        Logger.debug("Sending to #{inspect device}: #{inspect packet}")
         :gen_udp.send(state.udp, device.host, device.port, %Packet{packet |
             :frame_header => %FrameHeader{packet.frame_header |
                 :source => state.source

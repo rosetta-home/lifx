@@ -96,7 +96,7 @@ defmodule Lifx.Device do
     end
 
     def handle_cast({:packet, %Packet{} = packet}, state) do
-        Logger.info("Device: #{inspect state.id} got packet #{inspect packet}")
+        Logger.debug("Device: #{inspect state.id} got packet #{inspect packet}")
         {:noreply, state}
     end
 
