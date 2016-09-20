@@ -3,10 +3,12 @@ defmodule Lifx.Mixfile do
 
   def project do
     [app: :lifx,
-     version: "0.1.0",
+     version: "0.1.1",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     description: description(),
+     package: package(),
      deps: deps()]
   end
 
@@ -20,15 +22,23 @@ defmodule Lifx.Mixfile do
     ]
   end
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:mydep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
-  #
-  # Type "mix help deps" for more examples and options
+  def description do
+      """
+      A Client for Lifx LAN API
+      """
+  end
+
+  def package do
+    [
+      name: :lifx,
+      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      maintainers: ["Christopher Steven Coté"],
+      licenses: ["Apache License 2.0"],
+      links: %{"GitHub" => "https://github.com/NationalAssociationOfRealtors/lifx",
+          "Docs" => "https://github.com/NationalAssociationOfRealtors/lifx"}
+    ]
+  end
+
   defp deps do
     [
         {:cowboy, "~> 1.0"},

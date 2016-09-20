@@ -1,7 +1,7 @@
 defmodule Lifx.Supervisor do
     use Supervisor
+    require Logger
 
-    @tcp_server Application.get_env(:lifx, :tcp_server)
 
     def start_link do
         Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -14,8 +14,9 @@ defmodule Lifx.Supervisor do
             supervisor(Lifx.DeviceSupervisor, []),
         ]
 
+        tcp_server = Application.get_env(:lifx, :tcp_server, false)
         children =
-            case @tcp_server do
+            case tcp_server do
                 true -> [worker(Lifx.TCPServer, []) | children]
                 false -> children
             end
