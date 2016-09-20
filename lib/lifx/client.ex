@@ -39,6 +39,10 @@ defmodule Lifx.Client do
         GenServer.call(__MODULE__, {:send, device, packet, payload})
     end
 
+    def devices do
+        GenServer.call(__MODULE__, :devices)
+    end
+
     def add_handler(handler) do
         GenServer.call(__MODULE__, {:handler, handler})
     end
@@ -51,15 +55,15 @@ defmodule Lifx.Client do
             {:reuseaddr, true}
         ]
         source = :rand.uniform(4294967295)
+        Logger.debug("Client: #{source}")
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
-        GenEvent.add_mon_handler(events, Lifx.Handler, self)
-        Logger.info("Client: #{source}")
         {:ok, udp} = :gen_udp.open(0 , udp_options)
-        Process.send_after(self(), :discover, 200)
-        {:ok, %State{:udp => udp, :source => source, :events => events, :handlers => [{Lifx.Handler, self}]}}
+        Process.send_after(self(), :discover, 100)
+        {:ok, %State{:udp => udp, :source => source, :events => events}}
     end
 
     def handle_call({:send, device, packet, payload}, _from, state) do
+        Logger.debug("Sending to #{inspect device}: #{inspect packet}")
         :gen_udp.send(state.udp, device.host, device.port, %Packet{packet |
             :frame_header => %FrameHeader{packet.frame_header |
                 :source => state.source
@@ -86,6 +90,10 @@ defmodule Lifx.Client do
     def handle_call({:handler, handler}, {pid, _} = from, state) do
         GenEvent.add_mon_handler(state.events, handler, pid)
         {:reply, :ok, %{state | :handlers => [{handler, pid} | state.handlers]}}
+    end
+
+    def handle_call(:devices, _from, state) do
+        {:reply, state.devices, state}
     end
 
     def handle_info({:gen_event_EXIT, handler, reason}, state) do
@@ -118,7 +126,6 @@ defmodule Lifx.Client do
                     end)}
                 true -> %State{state | :devices => [device | state.devices]}
             end
-        IO.inspect new_state
         {:noreply, new_state}
     end
 

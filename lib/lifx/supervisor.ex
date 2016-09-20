@@ -2,12 +2,12 @@ defmodule Lifx.Supervisor do
     use Supervisor
     require Logger
 
-
     def start_link do
         Supervisor.start_link(__MODULE__, :ok, name: __MODULE__)
     end
 
     def init(:ok) do
+        tcp_server = Application.get_env(:lifx, :tcp_server)
         children = [
             worker(Lifx.Client, []),
             supervisor(Task.Supervisor, [[name: Lifx.Client.PacketSupervisor]]),

@@ -60,6 +60,63 @@ What's shown here is the initial state of the bulb. Shortly after the bulb is di
 
 Every 5 seconds the device process queries itself for updated state information. The updated state is then broadcast (using notify) over `Lifx.Client.Events` event bus. Anyone can add a handler to the event bus to handle updated device state by calling `Lifx.Client.add_handler`. See `Lifx.Handler` for an example implementation of an event handler.
 
+There's a good chance that by the time you've added your handler to `Lifx.Client` that device discovery has already happened. Luckily `Lifx.Client` also keeps a list of the known devices in it's state. You can return the currently known devices by calling `Lifx.Client.devices` which returns something similar to this.
+
+    [
+        %Lifx.Device.State{
+            group: %Lifx.Protocol.Group{
+                id: <<251, 202, 127, 40, 82, 243, 115, 230, 221, 64, 134, 187, 206, 118, 102, 156>>,
+                label: "Lab",
+                updated_at: 13888846944200582420
+            },
+            host: {192, 168, 1, 118},
+            hsbk: %Lifx.Protocol.HSBK{
+                brightness: 6701,
+                hue: 53768,
+                kelvin: 4000,
+                saturation: 65535
+            },
+            id: :"193196534887376",
+            label: "Bulb 2",
+            location: %Lifx.Protocol.Location{
+                id: <<205, 66, 137, 157, 220, 168, 133, 96, 147, 254, 0, 111, 52, 160, 229, 6>>,
+                label: "CRT Lab",
+                updated_at: 13836094609682883860
+            },
+            port: 56700,
+            power: 65535,
+            rx: 172830474,
+            signal: 9.999999747378752e-6,
+            tx: 1031638823
+        },
+        %Lifx.Device.State{
+            group: %Lifx.Protocol.Group{
+                id: <<251, 202, 127, 40, 82, 243, 115, 230, 221, 64, 134, 187, 206, 118, 102, 156>>,
+                label: "Lab",
+                updated_at: 13868661424052266260
+            },
+            host: {192, 168, 1, 60},
+            hsbk: %Lifx.Protocol.HSBK{
+                brightness: 6701,
+                hue: 53768,
+                kelvin: 4000,
+                saturation: 65535
+            },
+            id: :"204217420968912",
+            label: "Bulb 1",
+            location: %Lifx.Protocol.Location{
+                id: <<205, 66, 137, 157, 220, 168, 133, 96, 147, 254, 0, 111, 52, 160, 229, 6>>,
+                label: "CRT Lab",
+                updated_at: 9281461546755319060
+            },
+            port: 56700,
+            power: 65535,
+            rx: 178000365,
+            signal: 1.2589248399308417e-6,
+            tx: 1032173655
+        }
+    ]
+
 `Lifx.Client` also provides a function to set bulb color to all devices currently on the network. It uses a broadcast packet to accomplish this.
 
 `Lifx.Protocol` handles all protocol related functions, parsing and creating packets as well as payloads.

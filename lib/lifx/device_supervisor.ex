@@ -17,7 +17,7 @@ defmodule Lifx.DeviceSupervisor do
     end
 
     def start_device(%Device{} = device) do
-        Logger.info "Starting Device #{inspect device}"
+        Logger.debug "Starting Device #{inspect device}"
         Supervisor.start_child(__MODULE__, [device])
     end
 end
