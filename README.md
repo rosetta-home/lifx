@@ -9,6 +9,7 @@ Automatically discover and control all of your [Lifx](http://lifx.com) lightbulb
     1. git clone https://github.com/NationalAssociationOfRealtors/lifx.git
     2. mix do deps.get, deps.compile
     3. iex -S mix
+    4. iex(4)> Lifx.Client.start 
 
 For testing purposes it includes a small web frontend that's available at [http://localhost:8800](http://localhost:8800)
 

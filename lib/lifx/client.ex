@@ -47,19 +47,27 @@ defmodule Lifx.Client do
         GenServer.call(__MODULE__, {:handler, handler})
     end
 
+    def start do
+      GenServer.call(__MODULE__, :start)
+    end
+
     def init(:ok) do
-        udp_options = [
-            :binary,
-            {:broadcast, true},
-            {:ip, {0,0,0,0}},
-            {:reuseaddr, true}
-        ]
         source = :rand.uniform(4294967295)
         Logger.debug("Client: #{source}")
         {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
-        {:ok, udp} = :gen_udp.open(0 , udp_options)
-        Process.send_after(self(), :discover, 100)
-        {:ok, %State{:udp => udp, :source => source, :events => events}}
+        {:ok, %State{:source => source, :events => events}}
+    end
+
+    def handle_call(:start, _from, state) do
+      udp_options = [
+          :binary,
+          {:broadcast, true},
+          {:ip, {0,0,0,0}},
+          {:reuseaddr, true}
+      ]
+      {:ok, udp} = :gen_udp.open(0 , udp_options)
+      Process.send_after(self(), :discover, 0)
+      {:reply, :ok, %State{state | udp: udp}}
     end
 
     def handle_call({:send, device, packet, payload}, _from, state) do

@@ -51,6 +51,7 @@ defmodule LifxTest do
     end
 
     test "Client event handler" do
+        Lifx.Client.start
         Lifx.Client.add_handler(Lifx.Handler)
         assert_receive(%Device{}, 10000)
     end
