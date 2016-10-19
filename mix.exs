@@ -3,7 +3,7 @@ defmodule Lifx.Mixfile do
 
   def project do
     [app: :lifx,
-     version: "0.1.4",
+     version: "0.1.5",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -16,7 +16,7 @@ defmodule Lifx.Mixfile do
     [
         applications: [:logger, :cowboy, :poison],
         mod: {Lifx, []},
-        env: [tcp_server: true, tcp_port: 8800]
+        env: [tcp_server: false, tcp_port: 8800]
     ]
   end
 
@@ -29,9 +29,9 @@ defmodule Lifx.Mixfile do
   def package do
     [
       name: :lifx,
-      files: ["lib", "priv", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Christopher Steven Coté"],
-      licenses: ["MIT License"],
+      licenses: ["Apache License 2.0"],
       links: %{"GitHub" => "https://github.com/NationalAssociationOfRealtors/lifx",
           "Docs" => "https://github.com/NationalAssociationOfRealtors/lifx"}
     ]
@@ -41,6 +41,7 @@ defmodule Lifx.Mixfile do
     [
         {:cowboy, "~> 1.0"},
         {:poison, "~> 2.1"},
+        {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
 end
