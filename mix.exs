@@ -3,7 +3,7 @@ defmodule Lifx.Mixfile do
 
   def project do
     [app: :lifx,
-     version: "0.1.6",
+     version: "0.1.7",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -29,7 +29,7 @@ defmodule Lifx.Mixfile do
   def package do
     [
       name: :lifx,
-      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      files: ["lib", "priv", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Christopher Steven Coté"],
       licenses: ["Apache License 2.0"],
       links: %{"GitHub" => "https://github.com/NationalAssociationOfRealtors/lifx",
