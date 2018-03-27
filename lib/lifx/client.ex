@@ -54,7 +54,12 @@ defmodule Lifx.Client do
     def init(:ok) do
         source = :rand.uniform(4294967295)
         Logger.debug("Client: #{source}")
-        {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
+
+        # event handler
+        import Supervisor.Spec
+        child = worker(GenServer, [], restart: :temporary)
+        {:ok, events} = Supervisor.start_link([child], strategy: :simple_one_for_one, name: Lifx.Client.Events)
+
         {:ok, %State{:source => source, :events => events}}
     end
 
@@ -96,7 +101,7 @@ defmodule Lifx.Client do
     end
 
     def handle_call({:handler, handler}, {pid, _} = from, state) do
-        GenEvent.add_mon_handler(state.events, handler, pid)
+        Supervisor.start_child(state.events, [handler, pid])
         {:reply, :ok, %{state | :handlers => [{handler, pid} | state.handlers]}}
     end
 
@@ -106,7 +111,7 @@ defmodule Lifx.Client do
 
     def handle_info({:gen_event_EXIT, handler, reason}, state) do
         Enum.each(state.handlers, fn(h) ->
-            GenEvent.add_mon_handler(state.events, elem(h, 0), elem(h, 1))
+            Supervisor.start_child(state.events, [elem(h, 0), elem(h, 1)])
         end)
         {:noreply, state}
     end

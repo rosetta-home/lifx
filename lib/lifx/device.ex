@@ -53,25 +53,25 @@ defmodule Lifx.Device do
 
     def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet}, state) do
         s = %State{state | :label => packet.payload.label}
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
     def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet}, state) do
         s = %State{state | :power => packet.payload.level}
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
     def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @stategroup}} = packet}, state) do
         s = %State{state | :group => packet.payload.group}
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
     def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelocation}} = packet}, state) do
         s = %State{state | :location => packet.payload.location}
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
@@ -81,7 +81,7 @@ defmodule Lifx.Device do
             :power => packet.payload.power,
             :label => packet.payload.label,
         }
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
@@ -91,7 +91,7 @@ defmodule Lifx.Device do
             :rx => packet.payload.rx,
             :tx => packet.payload.tx,
         }
-        GenEvent.notify(Lifx.Client.Events, s)
+        notify(s)
         {:noreply, s}
     end
 
@@ -161,5 +161,12 @@ defmodule Lifx.Device do
         Client.send(state, group_packet)
         Process.send_after(self(), :state, 5000)
         {:noreply, state}
+    end
+
+    defp notify(msg) do
+        for {_, pid, _, _} <- Supervisor.which_children(Lifx.Client.Events) do
+            GenServer.cast(pid, msg)
+        end
+        :ok
     end
 end
