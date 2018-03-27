@@ -1,6 +1,5 @@
 defmodule Lifx.Handler do
     use GenEvent
-    require Logger
     alias Lifx.Device.State, as: Device
 
     def init do
