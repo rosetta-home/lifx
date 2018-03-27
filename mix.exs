@@ -39,8 +39,8 @@ defmodule Lifx.Mixfile do
 
   defp deps do
     [
-        {:cowboy, "~> 1.0"},
-        {:poison, "~> 2.1"},
+        {:cowboy, "~> 2.2"},
+        {:poison, "~> 3.1"},
         {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end

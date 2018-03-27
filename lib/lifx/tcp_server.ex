@@ -11,10 +11,9 @@ defmodule Lifx.TCPServer do
             ]}
         ])
         port = Application.get_env(:lifx, :tcp_port)
-        {:ok, _} = :cowboy.start_http(:lifx_http,
-            10,
+        {:ok, _} = :cowboy.start_clear(:lifx_http,
             [{:port, port}],
-            [{:env, [{:dispatch, dispatch}]}]
+            %{ env: %{ dispatch: dispatch } }
         )
     end
 end
