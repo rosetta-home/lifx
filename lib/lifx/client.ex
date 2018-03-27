@@ -44,7 +44,7 @@ defmodule Lifx.Client do
     end
 
     def add_handler(handler) do
-        GenServer.cast(__MODULE__, [{:handler, handler, self()}])
+        GenServer.cast(__MODULE__, {:handler, handler, self()})
     end
 
     def start do
@@ -96,7 +96,7 @@ defmodule Lifx.Client do
         {:reply, :ok, state}
     end
 
-    def handle_cast([{:handler, handler, pid}], state) do
+    def handle_cast({:handler, handler, pid}, state) do
         GenEvent.add_mon_handler(state.events, handler, pid)
         {:noreply, %{state | :handlers => [{handler, pid} | state.handlers]}}
     end
