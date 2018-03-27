@@ -143,6 +143,7 @@ defmodule Lifx.Client do
             :host => ip,
             :port => packet.payload.port
         }
+        Process.send(__MODULE__, d, [])
         case Process.whereis(d.id) do
             nil -> Lifx.DeviceSupervisor.start_device(d)
             _ -> true
