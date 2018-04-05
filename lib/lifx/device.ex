@@ -43,7 +43,7 @@ defmodule Lifx.Device do
     end
 
     def handle_packet(device, %Packet{} = packet) do
-        GenServer.cast(device, {:packet, packet})
+        GenServer.call(device, {:packet, packet})
     end
 
     def init(%State{} = device) do
@@ -51,53 +51,53 @@ defmodule Lifx.Device do
         {:ok, device}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelabel}} = packet}, _from, state) do
         s = %State{state | :label => packet.payload.label}
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statepower}} = packet}, _from, state) do
         s = %State{state | :power => packet.payload.level}
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @stategroup}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @stategroup}} = packet}, _from, state) do
         s = %State{state | :group => packet.payload.group}
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelocation}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statelocation}} = packet}, _from, state) do
         s = %State{state | :location => packet.payload.location}
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @light_state}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @light_state}} = packet}, _from, state) do
         s = %State{state |
             :hsbk => packet.payload.hsbk,
             :power => packet.payload.power,
             :label => packet.payload.label,
         }
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statewifiinfo}} = packet}, state) do
+    def handle_call({:packet, %Packet{:protocol_header => %ProtocolHeader{:type => @statewifiinfo}} = packet}, _from, state) do
         s = %State{state |
             :signal => packet.payload.signal,
             :rx => packet.payload.rx,
             :tx => packet.payload.tx,
         }
         notify(s)
-        {:noreply, s}
+        {:reply, s, s}
     end
 
-    def handle_cast({:packet, %Packet{} = packet}, state) do
+    def handle_call({:packet, %Packet{} = packet}, _from, state) do
         Logger.debug("Device: #{inspect state.id} got packet #{inspect packet}")
-        {:noreply, state}
+        {:reply, state, state}
     end
 
     def handle_cast({:set_color, %HSBK{} = hsbk, duration}, state) do

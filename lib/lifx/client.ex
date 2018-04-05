@@ -156,7 +156,8 @@ defmodule Lifx.Client do
     end
 
     def handle_packet(%Packet{:frame_address => %FrameAddress{:target => target}} = packet, _ip, _state) do
-        Light.handle_packet(target, packet)
+        d = Light.handle_packet(target, packet)
+        Process.send(__MODULE__, d, [])
     end
 
     def process(ip, payload, state) do
