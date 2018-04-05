@@ -44,7 +44,7 @@ defmodule Lifx.Client do
     end
 
     def add_handler(handler) do
-        GenServer.cast(__MODULE__, {:handler, handler, self()})
+        GenServer.call(__MODULE__, {:handler, handler})
     end
 
     def start do
@@ -54,7 +54,12 @@ defmodule Lifx.Client do
     def init(:ok) do
         source = :rand.uniform(4294967295)
         Logger.debug("Client: #{source}")
-        {:ok, events} = GenEvent.start_link([{:name, Lifx.Client.Events}])
+
+        # event handler
+        import Supervisor.Spec
+        child = worker(GenServer, [], restart: :temporary)
+        {:ok, events} = Supervisor.start_link([child], strategy: :simple_one_for_one, name: Lifx.Client.Events)
+
         {:ok, %State{:source => source, :events => events}}
     end
 
@@ -66,7 +71,6 @@ defmodule Lifx.Client do
           {:reuseaddr, true}
       ]
       {:ok, udp} = :gen_udp.open(0 , udp_options)
-      add_handler(Lifx.Handler)
       Process.send_after(self(), :discover, 0)
       {:reply, :ok, %State{state | udp: udp}}
     end
@@ -96,9 +100,9 @@ defmodule Lifx.Client do
         {:reply, :ok, state}
     end
 
-    def handle_cast({:handler, handler, pid}, state) do
-        GenEvent.add_mon_handler(state.events, handler, pid)
-        {:noreply, %{state | :handlers => [{handler, pid} | state.handlers]}}
+    def handle_call({:handler, handler}, {pid, _} = from, state) do
+        Supervisor.start_child(state.events, [handler, pid])
+        {:reply, :ok, %{state | :handlers => [{handler, pid} | state.handlers]}}
     end
 
     def handle_call(:devices, _from, state) do
@@ -107,7 +111,7 @@ defmodule Lifx.Client do
 
     def handle_info({:gen_event_EXIT, handler, reason}, state) do
         Enum.each(state.handlers, fn(h) ->
-            GenEvent.add_mon_handler(state.events, elem(h, 0), elem(h, 1))
+            Supervisor.start_child(state.events, [elem(h, 0), elem(h, 1)])
         end)
         {:noreply, state}
     end

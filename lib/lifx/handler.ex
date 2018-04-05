@@ -1,13 +1,14 @@
 defmodule Lifx.Handler do
-    use GenEvent
+    use GenServer
+    require Logger
     alias Lifx.Device.State, as: Device
 
-    def init do
-        {:ok, []}
+    def init(args) do
+        {:ok, args}
     end
 
-    def handle_event(%Device{} = device, parent) do
+    def handle_cast(%Device{} = device, parent) do
         send(parent, device)
-        {:ok, parent}
+        {:noreply, parent}
     end
 end
