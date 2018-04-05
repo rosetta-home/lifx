@@ -11,8 +11,8 @@ defmodule Lifx.API.Websocket do
         {:cowboy_websocket, req, [user_id: user_id] ++ state}
     end
 
-    def websocket_init(State) do
-        {:ok, State}
+    def websocket_init(state) do
+        {:ok, state}
     end
 
     def websocket_terminate(_reason, state) do
