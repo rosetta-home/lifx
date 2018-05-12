@@ -143,16 +143,22 @@ defmodule Lifx.Client do
     end
 
     def handle_packet(%Packet{:protocol_header => %ProtocolHeader{:type => @stateservice}} = packet, ip, state) do
-        d = %Device{
-            :id => packet.frame_address.target,
-            :host => ip,
-            :port => packet.payload.port
-        }
-        Process.send(__MODULE__, d, [])
-        case Process.whereis(d.id) do
-            nil -> Lifx.DeviceSupervisor.start_device(d)
+        target = packet.frame_address.target
+        host = ip
+        port = packet.payload.port
+
+        case Process.whereis(target) do
+            nil ->
+                Lifx.DeviceSupervisor.start_device(%Device{
+                    :id => target,
+                    :host => host,
+                    :port => port
+                })
             _ -> true
         end
+
+        updated = Light.handle_host_update(target, host, port)
+        Process.send(__MODULE__, updated, [])
     end
 
     def handle_packet(%Packet{:frame_address => %FrameAddress{:target => target}} = packet, _ip, _state) do

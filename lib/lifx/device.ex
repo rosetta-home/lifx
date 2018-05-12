@@ -46,6 +46,10 @@ defmodule Lifx.Device do
         GenServer.call(device, {:packet, packet})
     end
 
+    def handle_host_update(device, host, port) do
+        GenServer.call(device, {:update_host, host, port})
+    end
+
     def init(%State{} = device) do
         Process.send_after(self, :state, 100)
         {:ok, device}
@@ -98,6 +102,15 @@ defmodule Lifx.Device do
     def handle_call({:packet, %Packet{} = packet}, _from, state) do
         Logger.debug("Device: #{inspect state.id} got packet #{inspect packet}")
         {:reply, state, state}
+    end
+
+    def handle_call({:update_host, host, port}, _from, state) do
+        s = %State{state |
+            :host => host,
+            :port => port
+        }
+        notify(s)
+        {:reply, s, s}
     end
 
     def handle_cast({:set_color, %HSBK{} = hsbk, duration}, state) do
